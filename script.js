@@ -155,6 +155,8 @@ function draw() {
 
     // Oyun başlamadıysa talimat göster
     if (!gameStarted) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, WIDTH, HEIGHT);
         ctx.fillStyle = WHITE;
         ctx.font = '24px Arial';
         ctx.textAlign = 'center';
@@ -165,7 +167,11 @@ function draw() {
 // Klavye kontrolü
 document.addEventListener('keydown', (e) => {
     if (!gameStarted) {
-        gameStarted = true;
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+            gameStarted = true;
+        } else {
+            return;  // Yön tuşu değilse işlemi sonlandır
+        }
     }
     switch(e.key) {
         case 'ArrowUp':
