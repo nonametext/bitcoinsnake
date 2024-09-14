@@ -245,6 +245,7 @@ document.addEventListener('keydown', (e) => {
 
 // Oyunu başlat
 console.log('Oyun başlatılıyor');
+loadLeaderboard();
 initGame();
-gameState = 'start';  // Başlangıç ekranını göstermek için
-draw();  // İlk ekranı çiz
+gameState = 'start';
+draw();
