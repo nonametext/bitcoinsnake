@@ -26,7 +26,11 @@ function initGame() {
     canvas.width = WIDTH;
     canvas.height = HEIGHT;
     
-    snake = [{x: BLOCK_SIZE * (Math.floor(GRID_WIDTH / 2) + 1), y: BLOCK_SIZE * (Math.floor(GRID_HEIGHT / 2) + 1)}];
+    // Yılanın başlangıç pozisyonunu düzgün bir şekilde ayarla
+    const startX = Math.floor(GRID_WIDTH / 2) + 1;
+    const startY = Math.floor(GRID_HEIGHT / 2) + 1;
+    snake = [{x: startX * BLOCK_SIZE, y: startY * BLOCK_SIZE}];
+    
     direction = {x: 0, y: 0};
     score = 0;
     food = newFood();
@@ -75,6 +79,7 @@ function update() {
         head.y < BLOCK_SIZE || head.y >= HEIGHT - BLOCK_SIZE ||
         snake.some(segment => segment.x === head.x && segment.y === head.y)) {
         gameState = 'start';
+        initGame();  // Oyun bittiğinde yeniden başlat
         return;
     }
 
@@ -95,6 +100,7 @@ function update() {
     if (bomb) {
         if (head.x === bomb.x && head.y === bomb.y) {
             gameState = 'start';
+            initGame();  // Oyun bittiğinde yeniden başlat
             return;
         }
         if (Date.now() - bombSpawnTime > 3000) {
