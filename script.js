@@ -7,9 +7,11 @@ const GRID_HEIGHT = 10;
 const BLOCK_SIZE = 50;
 const WIDTH = (GRID_WIDTH + 2) * BLOCK_SIZE;
 const HEIGHT = (GRID_HEIGHT + 2) * BLOCK_SIZE;
+const GAME_SPEED = 200; // Milisaniye cinsinden oyun hızı (daha yüksek değer = daha yavaş oyun)
 
 // Oyun değişkenleri
 let snake, food, score, direction, bomb, bombSpawnTime, gameState;
+let gameLoop;
 
 // Renkler
 const BLACK = '#000000';
@@ -19,24 +21,43 @@ const GOLD = '#FFD700';
 
 // Bitcoin resmi
 const bitcoinImage = new Image();
-bitcoinImage.src = 'bitcoin.png';  // Bu dosyanın projenizde olduğundan emin olun
+bitcoinImage.src = 'bitcoin.png';
+
+// Bomba resmi
+const bombImage = new Image();
+bombImage.src = 'bomb.png';
+
+// Resimlerin yüklenmesini bekle
+let bitcoinImageLoaded = false;
+let bombImageLoaded = false;
+
+bitcoinImage.onload = function() {
+    bitcoinImageLoaded = true;
+    console.log('Bitcoin resmi yüklendi');
+};
+
+bombImage.onload = function() {
+    bombImageLoaded = true;
+    console.log('Bomba resmi yüklendi');
+};
 
 // Oyunu başlat
 function initGame() {
+    console.log('initGame çağrıldı');
     canvas.width = WIDTH;
     canvas.height = HEIGHT;
     
-    // Yılanın başlangıç pozisyonunu düzgün bir şekilde ayarla
     const startX = Math.floor(GRID_WIDTH / 2) + 1;
     const startY = Math.floor(GRID_HEIGHT / 2) + 1;
     snake = [{x: startX * BLOCK_SIZE, y: startY * BLOCK_SIZE}];
     
-    direction = {x: 0, y: 0};
+    direction = {x: BLOCK_SIZE, y: 0};  // Başlangıçta sağa hareket et
     score = 0;
     food = newFood();
     bomb = null;
     bombSpawnTime = 0;
-    gameState = 'start';
+    gameState = 'playing';  // Burayı 'playing' olarak değiştirdik
+    console.log('Oyun durumu:', gameState);
 }
 
 // Yeni yem oluştur
@@ -62,24 +83,27 @@ function spawnBomb() {
 }
 
 // Oyun döngüsü
-function gameLoop() {
-    if (gameState === 'playing') {
-        update();
-    }
-    draw();
-    requestAnimationFrame(gameLoop);
+function startGameLoop() {
+    console.log('startGameLoop çağrıldı');
+    clearInterval(gameLoop);  // Önceki döngüyü temizle
+    gameLoop = setInterval(() => {
+        if (gameState === 'playing') {
+            update();
+        }
+        draw();
+    }, GAME_SPEED);
 }
 
 // Güncelleme
 function update() {
+    console.log('update çağrıldı');
     const head = {x: snake[0].x + direction.x, y: snake[0].y + direction.y};
 
     // Çarpışma kontrolü
     if (head.x < BLOCK_SIZE || head.x >= WIDTH - BLOCK_SIZE || 
         head.y < BLOCK_SIZE || head.y >= HEIGHT - BLOCK_SIZE ||
-        snake.some(segment => segment.x === head.x && segment.y === head.y)) {
-        gameState = 'start';
-        initGame();  // Oyun bittiğinde yeniden başlat
+        snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)) {
+        gameOver();
         return;
     }
 
@@ -99,14 +123,20 @@ function update() {
     // Bomba kontrolü
     if (bomb) {
         if (head.x === bomb.x && head.y === bomb.y) {
-            gameState = 'start';
-            initGame();  // Oyun bittiğinde yeniden başlat
+            gameOver();
             return;
         }
         if (Date.now() - bombSpawnTime > 3000) {
             bomb = null;
         }
     }
+}
+
+// Oyun Sonu
+function gameOver() {
+    console.log('gameOver çağrıldı');
+    gameState = 'end';
+    clearInterval(gameLoop);
 }
 
 // Çizim
@@ -122,6 +152,18 @@ function draw() {
         ctx.fillText('Bitcoin Yılanı', WIDTH / 2, HEIGHT / 2 - 50);
         ctx.font = '20px Arial';
         ctx.fillText('Oyuna başlamak için ENTER tuşuna basın', WIDTH / 2, HEIGHT / 2 + 50);
+        return;
+    }
+
+    if (gameState === 'end') {
+        // Oyun sonu ekranı
+        ctx.fillStyle = WHITE;
+        ctx.font = '30px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Oyun Bitti', WIDTH / 2, HEIGHT / 2 - 50);
+        ctx.font = '20px Arial';
+        ctx.fillText(`Skorunuz: ${score}`, WIDTH / 2, HEIGHT / 2);
+        ctx.fillText('Tekrar oynamak için ENTER tuşuna basın', WIDTH / 2, HEIGHT / 2 + 50);
         return;
     }
 
@@ -147,7 +189,7 @@ function draw() {
     // Yılanı çiz
     ctx.fillStyle = ORANGE;
     snake.forEach((segment, index) => {
-        if (index === 0) {
+        if (index === 0 && bitcoinImageLoaded) {
             // Yılanın başına Bitcoin resmi çiz
             ctx.drawImage(bitcoinImage, segment.x, segment.y, BLOCK_SIZE, BLOCK_SIZE);
         } else {
@@ -160,9 +202,8 @@ function draw() {
     ctx.fillRect(food.x, food.y, BLOCK_SIZE, BLOCK_SIZE);
 
     // Bombayı çiz
-    if (bomb) {
-        ctx.fillStyle = 'red';
-        ctx.fillRect(bomb.x, bomb.y, BLOCK_SIZE, BLOCK_SIZE);
+    if (bomb && bombImageLoaded) {
+        ctx.drawImage(bombImage, bomb.x, bomb.y, BLOCK_SIZE, BLOCK_SIZE);
     }
 
     // Skoru çiz
@@ -174,9 +215,13 @@ function draw() {
 
 // Klavye kontrolü
 document.addEventListener('keydown', (e) => {
-    if (gameState === 'start' && e.key === 'Enter') {
-        gameState = 'playing';
-        direction = {x: BLOCK_SIZE, y: 0};  // Oyun başladığında yılanı sağa hareket ettir
+    console.log('Tuşa basıldı:', e.key);
+    console.log('Mevcut oyun durumu:', gameState);
+
+    if ((gameState === 'start' || gameState === 'end') && e.key === 'Enter') {
+        console.log('ENTER tuşuna basıldı, oyun başlatılıyor');
+        initGame();
+        startGameLoop();
         return;
     }
 
@@ -199,5 +244,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 // Oyunu başlat
+console.log('Oyun başlatılıyor');
 initGame();
-gameLoop();
+gameState = 'start';  // Başlangıç ekranını göstermek için
+draw();  // İlk ekranı çiz
