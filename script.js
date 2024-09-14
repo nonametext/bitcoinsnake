@@ -9,7 +9,7 @@ const WIDTH = (GRID_WIDTH + 2) * BLOCK_SIZE;
 const HEIGHT = (GRID_HEIGHT + 2) * BLOCK_SIZE;
 
 // Oyun değişkenleri
-let snake, food, score, direction, bomb, bombSpawnTime;
+let snake, food, score, direction, bomb, bombSpawnTime, gameStarted;
 
 // Renkler
 const BLACK = '#000000';
@@ -17,17 +17,22 @@ const WHITE = '#FFFFFF';
 const ORANGE = '#FFA500';
 const GOLD = '#FFD700';
 
+// Bitcoin resmi
+const bitcoinImage = new Image();
+bitcoinImage.src = 'bitcoin.png';  // Bu dosyanın projenizde olduğundan emin olun
+
 // Oyunu başlat
 function initGame() {
     canvas.width = WIDTH;
     canvas.height = HEIGHT;
     
     snake = [{x: BLOCK_SIZE * (Math.floor(GRID_WIDTH / 2) + 1), y: BLOCK_SIZE * (Math.floor(GRID_HEIGHT / 2) + 1)}];
-    direction = {x: BLOCK_SIZE, y: 0};
+    direction = {x: 0, y: 0};  // Başlangıçta hareket etmeyecek
     score = 0;
     food = newFood();
     bomb = null;
     bombSpawnTime = 0;
+    gameStarted = false;
 }
 
 // Yeni yem oluştur
@@ -61,6 +66,8 @@ function gameLoop() {
 
 // Güncelleme
 function update() {
+    if (!gameStarted) return;  // Oyun başlamadıysa güncelleme yapma
+
     const head = {x: snake[0].x + direction.x, y: snake[0].y + direction.y};
 
     // Çarpışma kontrolü
@@ -122,8 +129,13 @@ function draw() {
 
     // Yılanı çiz
     ctx.fillStyle = ORANGE;
-    snake.forEach(segment => {
-        ctx.fillRect(segment.x, segment.y, BLOCK_SIZE, BLOCK_SIZE);
+    snake.forEach((segment, index) => {
+        if (index === 0) {
+            // Yılanın başına Bitcoin resmi çiz
+            ctx.drawImage(bitcoinImage, segment.x, segment.y, BLOCK_SIZE, BLOCK_SIZE);
+        } else {
+            ctx.fillRect(segment.x, segment.y, BLOCK_SIZE, BLOCK_SIZE);
+        }
     });
 
     // Yemi çiz
@@ -140,10 +152,21 @@ function draw() {
     ctx.fillStyle = WHITE;
     ctx.font = '20px Arial';
     ctx.fillText(`Skor: ${score}`, 10, 30);
+
+    // Oyun başlamadıysa talimat göster
+    if (!gameStarted) {
+        ctx.fillStyle = WHITE;
+        ctx.font = '24px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Başlamak için bir yön tuşuna basın', WIDTH / 2, HEIGHT / 2);
+    }
 }
 
 // Klavye kontrolü
 document.addEventListener('keydown', (e) => {
+    if (!gameStarted) {
+        gameStarted = true;
+    }
     switch(e.key) {
         case 'ArrowUp':
             if (direction.y === 0) direction = {x: 0, y: -BLOCK_SIZE};
