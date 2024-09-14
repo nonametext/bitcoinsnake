@@ -9,7 +9,7 @@ const WIDTH = (GRID_WIDTH + 2) * BLOCK_SIZE;
 const HEIGHT = (GRID_HEIGHT + 2) * BLOCK_SIZE;
 
 // Oyun değişkenleri
-let snake, food, score, direction, bomb, bombSpawnTime, gameStarted, gameState;
+let snake, food, score, direction, bomb, bombSpawnTime, gameState;
 
 // Renkler
 const BLACK = '#000000';
@@ -32,7 +32,6 @@ function initGame() {
     food = newFood();
     bomb = null;
     bombSpawnTime = 0;
-    gameStarted = false;
     gameState = 'start';
 }
 
@@ -171,7 +170,7 @@ function draw() {
 document.addEventListener('keydown', (e) => {
     if (gameState === 'start' && e.key === 'Enter') {
         gameState = 'playing';
-        initGame();
+        direction = {x: BLOCK_SIZE, y: 0};  // Oyun başladığında yılanı sağa hareket ettir
         return;
     }
 
