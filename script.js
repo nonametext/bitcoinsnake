@@ -9,7 +9,7 @@ const WIDTH = (GRID_WIDTH + 2) * BLOCK_SIZE;
 const HEIGHT = (GRID_HEIGHT + 2) * BLOCK_SIZE;
 
 // Oyun değişkenleri
-let snake, food, score, direction, bomb, bombSpawnTime, gameStarted;
+let snake, food, score, direction, bomb, bombSpawnTime, gameStarted, gameState;
 
 // Renkler
 const BLACK = '#000000';
@@ -27,12 +27,13 @@ function initGame() {
     canvas.height = HEIGHT;
     
     snake = [{x: BLOCK_SIZE * (Math.floor(GRID_WIDTH / 2) + 1), y: BLOCK_SIZE * (Math.floor(GRID_HEIGHT / 2) + 1)}];
-    direction = {x: 0, y: 0};  // Başlangıçta hareket etmeyecek
+    direction = {x: 0, y: 0};
     score = 0;
     food = newFood();
     bomb = null;
     bombSpawnTime = 0;
     gameStarted = false;
+    gameState = 'start';
 }
 
 // Yeni yem oluştur
@@ -59,22 +60,22 @@ function spawnBomb() {
 
 // Oyun döngüsü
 function gameLoop() {
-    update();
+    if (gameState === 'playing') {
+        update();
+    }
     draw();
     requestAnimationFrame(gameLoop);
 }
 
 // Güncelleme
 function update() {
-    if (!gameStarted) return;  // Oyun başlamadıysa güncelleme yapma
-
     const head = {x: snake[0].x + direction.x, y: snake[0].y + direction.y};
 
     // Çarpışma kontrolü
     if (head.x < BLOCK_SIZE || head.x >= WIDTH - BLOCK_SIZE || 
         head.y < BLOCK_SIZE || head.y >= HEIGHT - BLOCK_SIZE ||
         snake.some(segment => segment.x === head.x && segment.y === head.y)) {
-        initGame();
+        gameState = 'start';
         return;
     }
 
@@ -94,7 +95,7 @@ function update() {
     // Bomba kontrolü
     if (bomb) {
         if (head.x === bomb.x && head.y === bomb.y) {
-            initGame();
+            gameState = 'start';
             return;
         }
         if (Date.now() - bombSpawnTime > 3000) {
@@ -107,6 +108,17 @@ function update() {
 function draw() {
     ctx.fillStyle = BLACK;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+    if (gameState === 'start') {
+        // Başlangıç ekranı
+        ctx.fillStyle = WHITE;
+        ctx.font = '30px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Bitcoin Yılanı', WIDTH / 2, HEIGHT / 2 - 50);
+        ctx.font = '20px Arial';
+        ctx.fillText('Oyuna başlamak için ENTER tuşuna basın', WIDTH / 2, HEIGHT / 2 + 50);
+        return;
+    }
 
     // Oyun alanını çiz
     ctx.fillStyle = '#323232';
@@ -151,28 +163,20 @@ function draw() {
     // Skoru çiz
     ctx.fillStyle = WHITE;
     ctx.font = '20px Arial';
+    ctx.textAlign = 'left';
     ctx.fillText(`Skor: ${score}`, 10, 30);
-
-    // Oyun başlamadıysa talimat göster
-    if (!gameStarted) {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(0, 0, WIDTH, HEIGHT);
-        ctx.fillStyle = WHITE;
-        ctx.font = '24px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('Başlamak için bir yön tuşuna basın', WIDTH / 2, HEIGHT / 2);
-    }
 }
 
 // Klavye kontrolü
 document.addEventListener('keydown', (e) => {
-    if (!gameStarted) {
-        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-            gameStarted = true;
-        } else {
-            return;  // Yön tuşu değilse işlemi sonlandır
-        }
+    if (gameState === 'start' && e.key === 'Enter') {
+        gameState = 'playing';
+        initGame();
+        return;
     }
+
+    if (gameState !== 'playing') return;
+
     switch(e.key) {
         case 'ArrowUp':
             if (direction.y === 0) direction = {x: 0, y: -BLOCK_SIZE};
